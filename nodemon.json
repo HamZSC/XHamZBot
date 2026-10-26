@@ -1,0 +1,6 @@
+{
+  "watch": ["index.js", "config/", "event/", "game/", "grup/", "owner/", "premium/", "public/"],
+  "ext": "js,json",
+  "ignore": ["session_wa/*", "data/**/*.json"],
+  "exec": "node index.js"
+}
