@@ -22,8 +22,20 @@ module.exports = async (sock, mek) => {
 
     const isOwner = config.ownerNumber.includes(senderNumber) || sender === config.ownerId;
     
-    // Pengecekan Premium yang sudah diperbaiki (Mendukung Format String & Objek Expired)
-    let isPrem = isOwner;
+    // Pengecekan Mode Owner Bypass (Opsional) atau Status Premium Standar
+    let bypassPrem = true;
+    try {
+        const ownerModePath = path.join(__dirname, '../data/owner_mode.json');
+        if (fs.existsSync(ownerModePath)) {
+            const settings = JSON.parse(fs.readFileSync(ownerModePath, 'utf-8'));
+            if (typeof settings.bypassPrem === 'boolean') bypassPrem = settings.bypassPrem;
+        }
+    } catch (e) {
+        bypassPrem = true;
+    }
+
+    // Pengecekan Status Premium (Mendukung Format String Lama & Format Objek addprem Baru)
+    let isPrem = isOwner && bypassPrem;
     try {
         const premPath = path.join(__dirname, '../data/premium/premium.json');
         if (fs.existsSync(premPath)) {
@@ -31,17 +43,19 @@ module.exports = async (sock, mek) => {
             const now = Date.now();
             
             if (Array.isArray(premData)) {
-                isPrem = isOwner || premData.some(item => {
+                const inDatabase = premData.some(item => {
                     if (typeof item === 'string') return item === senderNumber;
                     if (typeof item === 'object' && item.number) {
                         return item.number === senderNumber && (item.expiredAt ? item.expiredAt > now : true);
                     }
                     return false;
                 });
+                
+                isPrem = isPrem || inDatabase;
             }
         }
     } catch (e) {
-        isPrem = isOwner;
+        isPrem = isOwner && bypassPrem;
     }
 
     // ===================================================================
@@ -144,3 +158,4 @@ module.exports = async (sock, mek) => {
         }
     }
 };
+                        
